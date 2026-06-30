@@ -17,13 +17,13 @@ export function OverviewTab() {
 
       <TotalTrendChart />
 
+      <div style={{ marginTop: 16 }}>
+        <LowTrafficPeriods />
+      </div>
+
       <div style={twoColGrid}>
         <TopNRankingChart />
         <ErrorRateTable />
-      </div>
-
-      <div style={{ marginTop: 16 }}>
-        <LowTrafficPeriods />
       </div>
     </div>
   )

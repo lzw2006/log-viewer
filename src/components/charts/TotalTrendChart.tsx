@@ -25,7 +25,7 @@ export function TotalTrendChart() {
     () => ({
       tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
       legend: { top: 0 },
-      grid: { left: 48, right: 24, top: 40, bottom: 80 },
+      grid: { left: 48, right: 48, top: 40, bottom: 80 },
       xAxis: {
         type: 'category',
         data: data.buckets,

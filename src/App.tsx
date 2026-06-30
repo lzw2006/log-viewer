@@ -75,7 +75,7 @@ const title: CSSProperties = { margin: 0, fontSize: 20, fontWeight: 600 }
 
 const subtitle: CSSProperties = { margin: '4px 0 0', fontSize: 13, color: '#8a8f99' }
 
-const main: CSSProperties = { maxWidth: 1200, margin: '0 auto', padding: '24px 16px 64px' }
+const main: CSSProperties = { maxWidth: 1600, margin: '0 auto', padding: '24px 16px 64px' }
 
 const tabBar: CSSProperties = {
   display: 'flex',

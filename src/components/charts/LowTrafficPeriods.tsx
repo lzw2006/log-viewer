@@ -32,16 +32,21 @@ const placeholderStyle: React.CSSProperties = {
 }
 
 /**
- * 低峰时段分析：显示调用量最低的时间段。
- * 帮助发现系统的低谷时段，可用于维护窗口规划等。
+ * 低峰时段分析：同时提供横向条形图和折线图两种视图。
+ * 横向条形图：便于精确比较每个时间段的调用量
+ * 折线图：便于观察调用量随时间的趋势
  */
 export function LowTrafficPeriods() {
   const { parseResult, hiddenClasses, overviewGranularity, overviewDateRange } = useDataStore()
   const rawRecords = parseResult?.records ?? []
 
   const [limit, setLimit] = useState(10) // 可选择的显示数量
-  const containerRef = useRef<HTMLDivElement>(null)
-  const chartRef = useRef<echarts.ECharts | null>(null)
+  const [viewType, setViewType] = useState<'bar' | 'line'>('bar') // 视图类型
+
+  const barContainerRef = useRef<HTMLDivElement>(null)
+  const lineChartContainerRef = useRef<HTMLDivElement>(null)
+  const barChartRef = useRef<echarts.ECharts | null>(null)
+  const lineChartRef = useRef<echarts.ECharts | null>(null)
 
   const lowTraffic = useMemo(
     () => {
@@ -54,18 +59,17 @@ export function LowTrafficPeriods() {
   // 倒序显示（最低的在上面）
   const displayData = useMemo(() => [...lowTraffic].reverse(), [lowTraffic])
 
-  const chartHeight = Math.max(400, displayData.length * 28)
-
-  const option: EChartsOption = useMemo(
+  // 横向条形图配置
+  const barOption: EChartsOption = useMemo(
     () => ({
       tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-      grid: { left: 120, right: 48, top: 16, bottom: 16 },
+      grid: { left: 140, right: 80, top: 16, bottom: 16 },
       xAxis: { type: 'value', name: '调用量' },
       yAxis: {
         type: 'category',
         data: displayData.map((d) => d.bucket),
         axisLabel: {
-          width: 100,
+          width: 120,
           overflow: 'truncate',
           ellipsis: '...',
         },
@@ -82,27 +86,73 @@ export function LowTrafficPeriods() {
     [displayData],
   )
 
-  // 初始化图表
+  // 折线图配置
+  const lineOption: EChartsOption = useMemo(
+    () => ({
+      tooltip: { trigger: 'axis', axisPointer: { type: 'line' } },
+      grid: { left: 60, right: 48, top: 16, bottom: 56 },
+      xAxis: {
+        type: 'category',
+        data: displayData.map((d) => d.bucket),
+        axisLabel: {
+          rotate: 30,
+          width: 120,
+          overflow: 'truncate',
+          ellipsis: '...',
+        },
+      },
+      yAxis: { type: 'value', name: '调用量' },
+      series: [
+        {
+          type: 'line',
+          data: displayData.map((d) => d.count),
+          itemStyle: { color: '#52c41a' },
+          lineStyle: { color: '#52c41a', width: 2 },
+          areaStyle: { color: '#52c41a', opacity: 0.2 },
+          smooth: true,
+        },
+      ],
+    }),
+    [displayData],
+  )
+
+  const chartHeight = Math.max(400, displayData.length * 28)
+
+  // 初始化条形图
   useEffect(() => {
-    if (!containerRef.current || displayData.length === 0) return
-    if (!chartRef.current) {
-      chartRef.current = echarts.init(containerRef.current)
+    if (viewType !== 'bar' || !barContainerRef.current || displayData.length === 0) return
+    if (!barChartRef.current) {
+      barChartRef.current = echarts.init(barContainerRef.current)
     }
-    chartRef.current.setOption(option, { notMerge: true })
-  }, [option, displayData.length])
+    barChartRef.current.setOption(barOption, { notMerge: true })
+  }, [barOption, displayData.length, viewType])
+
+  // 初始化折线图
+  useEffect(() => {
+    if (viewType !== 'line' || !lineChartContainerRef.current || displayData.length === 0) return
+    if (!lineChartRef.current) {
+      lineChartRef.current = echarts.init(lineChartContainerRef.current)
+    }
+    lineChartRef.current.setOption(lineOption, { notMerge: true })
+  }, [lineOption, displayData.length, viewType])
 
   // 高度变化时 resize
   useEffect(() => {
-    if (chartRef.current) {
-      chartRef.current.resize()
+    if (barChartRef.current) {
+      barChartRef.current.resize()
+    }
+    if (lineChartRef.current) {
+      lineChartRef.current.resize()
     }
   }, [chartHeight])
 
   // 清理
   useEffect(() => {
     return () => {
-      chartRef.current?.dispose()
-      chartRef.current = null
+      barChartRef.current?.dispose()
+      barChartRef.current = null
+      lineChartRef.current?.dispose()
+      lineChartRef.current = null
     }
   }, [])
 
@@ -127,7 +177,7 @@ export function LowTrafficPeriods() {
             onChange={(e) => setLimit(Number(e.target.value))}
             style={{
               padding: '4px 8px',
-              border: '1px solid #d9d9d9',
+              border: '1px solid #d9d9d9d',
               borderRadius: 4,
               fontSize: 13,
             }}
@@ -138,6 +188,45 @@ export function LowTrafficPeriods() {
               </option>
             ))}
           </select>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              background: '#f5f6f8',
+              padding: '4px 8px',
+              borderRadius: 4,
+            }}
+          >
+            <button
+              style={{
+                padding: '4px 12px',
+                border: `1px solid ${viewType === 'bar' ? '#1677ff' : '#d9d9d9'}`,
+                background: viewType === 'bar' ? '#1677ff' : '#fff',
+                color: viewType === 'bar' ? '#fff' : '#595959',
+                borderRadius: 4,
+                cursor: 'pointer',
+                fontSize: 13,
+              }}
+              onClick={() => setViewType('bar')}
+            >
+              条形图
+            </button>
+            <button
+              style={{
+                padding: '4px 12px',
+                border: `1px solid ${viewType === 'line' ? '#1677ff' : '#d9d9d9'}`,
+                background: viewType === 'line' ? '#1677ff' : '#fff',
+                color: viewType === 'line' ? '#fff' : '#595959',
+                borderRadius: 4,
+                cursor: 'pointer',
+                fontSize: 13,
+              }}
+              onClick={() => setViewType('line')}
+            >
+              折线图
+            </button>
+          </div>
           <span style={{ color: '#8c8c8c', fontSize: 12 }}>
             粒度：{overviewGranularity === 'month' ? '月' : overviewGranularity === 'week' ? '周' : overviewGranularity === 'day' ? '日' : overviewGranularity === 'hour' ? '时' : '分'}
           </span>
@@ -148,14 +237,18 @@ export function LowTrafficPeriods() {
       ) : (
         <div
           style={{
-            height: 400,
+            height: 600,
             overflowY: 'auto',
             overflowX: 'hidden',
             border: '1px solid #f0f0f0',
             borderRadius: 4,
           }}
         >
-          <div ref={containerRef} style={{ height: chartHeight }} />
+          {viewType === 'bar' ? (
+            <div ref={barContainerRef} style={{ height: chartHeight, width: '100%' }} />
+          ) : (
+            <div ref={lineChartContainerRef} style={{ height: chartHeight, width: '100%' }} />
+          )}
         </div>
       )}
       <div style={{ marginTop: 8, color: '#8c8c8c', fontSize: 12 }}>
