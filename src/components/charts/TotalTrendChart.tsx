@@ -10,6 +10,7 @@ export function TotalTrendChart() {
   const overviewGranularity = useDataStore((s) => s.overviewGranularity)
   const hiddenClasses = useDataStore((s) => s.hiddenClasses)
   const overviewDateRange = useDataStore((s) => s.overviewDateRange)
+  const chartType = useDataStore((s) => s.totalTrendChartType)
 
   const data = useMemo(() => {
     const rawRecords = parseResult?.records ?? []
@@ -23,7 +24,7 @@ export function TotalTrendChart() {
 
   const option = useMemo<EChartsOption>(
     () => ({
-      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+      tooltip: { trigger: 'axis', axisPointer: { type: chartType === 'bar' ? 'shadow' : 'line' } },
       legend: { top: 0 },
       grid: { left: 48, right: 48, top: 40, bottom: 80 },
       xAxis: {
@@ -44,16 +45,17 @@ export function TotalTrendChart() {
       ],
       series: data.series.map((s) => ({
         name: STATUS_CLASS_LABELS[s.class],
-        type: 'bar',
-        stack: 'total',
+        type: chartType,
+        stack: chartType === 'bar' ? 'total' : undefined,
         itemStyle: { color: STATUS_CLASS_COLORS[s.class] },
+        lineStyle: chartType === 'line' ? { color: STATUS_CLASS_COLORS[s.class], width: 2 } : undefined,
         data: s.data,
       })),
     }),
-    [data],
+    [data, chartType],
   )
 
-  const ref = useECharts(option, [data])
+  const ref = useECharts(option, [option])
 
   const isEmpty = !parseResult || parseResult.records.length === 0
 

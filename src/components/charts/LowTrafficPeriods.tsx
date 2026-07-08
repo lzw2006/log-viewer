@@ -56,8 +56,8 @@ export function LowTrafficPeriods() {
     [rawRecords, overviewGranularity, hiddenClasses, overviewDateRange, limit],
   )
 
-  // 倒序显示（最低的在上面）
-  const displayData = useMemo(() => [...lowTraffic].reverse(), [lowTraffic])
+  // 按时间排序显示（从早到晚）
+  const displayData = useMemo(() => [...lowTraffic].sort((a, b) => a.timestamp - b.timestamp), [lowTraffic])
 
   // 横向条形图配置
   const barOption: EChartsOption = useMemo(

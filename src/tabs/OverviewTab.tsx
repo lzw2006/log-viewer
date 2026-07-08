@@ -1,6 +1,7 @@
 import { GranularitySwitch } from '../components/GranularitySwitch'
 import { StatusFilterChips } from '../components/StatusFilterChips'
 import { DateRangePicker } from '../components/DateRangePicker'
+import { ChartTypeToggle } from '../components/ChartTypeToggle'
 import { TotalTrendChart } from '../components/charts/TotalTrendChart'
 import { TopNRankingChart } from '../components/charts/TopNRankingChart'
 import { ErrorRateTable } from '../components/charts/ErrorRateTable'
@@ -13,6 +14,7 @@ export function OverviewTab() {
         <GranularitySwitch scope="overview" />
         <DateRangePicker scope="overview" />
         <StatusFilterChips />
+        <ChartTypeToggle />
       </div>
 
       <TotalTrendChart />
